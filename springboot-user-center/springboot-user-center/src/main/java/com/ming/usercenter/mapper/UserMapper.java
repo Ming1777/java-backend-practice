@@ -1,6 +1,10 @@
 package com.ming.usercenter.mapper;
 
 import com.ming.usercenter.entity.User;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -14,6 +18,28 @@ public interface UserMapper {
             SELECT id, username, password, age, status, created_at
             FROM users
             WHERE id = #{id}
+              AND status = 1
             """)
     User findById(@Param("id") Long id);
+
+    // （查询全部用户）
+    @Select("""
+            SELECT id, username, password, age, status, created_at
+            FROM users
+            WHERE status = 1
+            ORDER BY id
+            """)
+    List<User> findAll();
+
+    // （修改用户状态：根据id把status改成0或1）
+    @Update("""
+            UPDATE users
+            SET status = #{status}
+            WHERE id = #{id}
+            """)
+    int updateStatus(
+            @Param("id") Long id,
+            @Param("status") Integer status
+    );
+
 }

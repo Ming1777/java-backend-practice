@@ -6,3 +6,7 @@ Content-Type: application/json
   "username": "xiaohong",
   "age": 19
 }
+
+
+### 禁用2号用户
+PATCH http://localhost:8080/users/2/status?status=0
