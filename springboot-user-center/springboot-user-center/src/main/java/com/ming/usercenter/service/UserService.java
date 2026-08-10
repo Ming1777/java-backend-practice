@@ -8,17 +8,22 @@ import com.ming.usercenter.mapper.UserMapper;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 // （用户Service：处理与用户有关的业务）
 @Service
 public class UserService {
-
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
-    // （构造方法注入：Spring把UserMapper对象交给UserService）
-    public UserService(UserMapper userMapper) {
+    // （Spring把Mapper和密码加密器交给UserService）
+    public UserService(
+            UserMapper userMapper,
+            PasswordEncoder passwordEncoder
+    ) {
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // （查询用户：通过Mapper查询MySQL，再转换成返回给前端的数据）
@@ -72,14 +77,44 @@ public class UserService {
         // 修改行数大于0，说明修改成功
         return affectedRows > 0;
     }
-    // （新增用户功能目前还是临时数据，之后再改成写入MySQL）
-    public UserResponse createUser(UserCreateRequest request) {
-        System.out.println("2. Service开始新增用户：" + request.getUsername());
 
+    // （新增用户：检查数据、加密密码、写入MySQL）
+    public UserResponse createUser(UserCreateRequest request) {
+
+        // 检查用户名、密码和年龄是否填写
+        if (request.getUsername() == null
+                || request.getUsername().isBlank()
+                || request.getPassword() == null
+                || request.getPassword().isBlank()
+                || request.getAge() == null) {
+            return null;
+        }
+
+        // 创建一个与users表对应的User对象
+        User user = new User();
+
+        user.setUsername(request.getUsername());
+
+        // 加密密码，数据库不能保存明文密码
+        String encodedPassword =
+                passwordEncoder.encode(request.getPassword());
+        user.setPassword(encodedPassword);
+
+        user.setAge(request.getAge());
+        user.setStatus(1);
+
+        // Mapper执行INSERT，并把MySQL生成的id放回user.id
+        int affectedRows = userMapper.insert(user);
+
+        if (affectedRows == 0) {
+            return null;
+        }
+
+        // 返回安全数据，不返回密码
         return new UserResponse(
-                1L,
-                request.getUsername(),
-                request.getAge()
+                user.getId(),
+                user.getUsername(),
+                user.getAge()
         );
     }
 }
