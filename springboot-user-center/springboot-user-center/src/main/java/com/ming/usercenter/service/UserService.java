@@ -32,7 +32,7 @@ public class UserService {
 
         User user = userMapper.findById(id);
 
-        // （暂时处理用户不存在的情况，后面学习统一异常处理时再完善）
+        // 未查询到用户时返回null，由Controller包装成失败响应
         if (user == null) {
             return null;
         }
@@ -87,7 +87,7 @@ public class UserService {
                 || request.getPassword() == null
                 || request.getPassword().isBlank()
                 || request.getAge() == null) {
-            return null;
+            throw new IllegalArgumentException("用户数据不合法");
         }
 
         // 创建一个与users表对应的User对象
@@ -107,7 +107,7 @@ public class UserService {
         int affectedRows = userMapper.insert(user);
 
         if (affectedRows == 0) {
-            return null;
+            throw new IllegalStateException("新增用户失败");
         }
 
         // 返回安全数据，不返回密码
