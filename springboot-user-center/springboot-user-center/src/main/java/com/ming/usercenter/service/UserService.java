@@ -80,16 +80,6 @@ public class UserService {
 
     // （新增用户：检查数据、加密密码、写入MySQL）
     public UserResponse createUser(UserCreateRequest request) {
-
-        // 检查用户名、密码和年龄是否填写
-        if (request.getUsername() == null
-                || request.getUsername().isBlank()
-                || request.getPassword() == null
-                || request.getPassword().isBlank()
-                || request.getAge() == null) {
-            throw new IllegalArgumentException("用户数据不合法");
-        }
-
         // 创建一个与users表对应的User对象
         User user = new User();
 

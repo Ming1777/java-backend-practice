@@ -4,6 +4,7 @@ import com.ming.usercenter.common.ApiResponse;
 import com.ming.usercenter.dto.UserCreateRequest;
 import com.ming.usercenter.dto.UserResponse;
 import com.ming.usercenter.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -66,10 +67,10 @@ public class UserController {
         return ApiResponse.success("用户状态修改成功");
     }
 
-    // （新增用户：接收JSON，业务异常交给全局异常处理器）
+    // （新增用户：先自动校验JSON，再交给Service处理）
     @PostMapping
     public ApiResponse<UserResponse> createUser(
-            @RequestBody UserCreateRequest request
+            @Valid @RequestBody UserCreateRequest request
     ) {
         UserResponse response = userService.createUser(request);
         return ApiResponse.success(response);
