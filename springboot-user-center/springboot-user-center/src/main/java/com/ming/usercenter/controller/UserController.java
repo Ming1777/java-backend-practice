@@ -2,6 +2,7 @@ package com.ming.usercenter.controller;
 
 import com.ming.usercenter.common.ApiResponse;
 import com.ming.usercenter.dto.UserCreateRequest;
+import com.ming.usercenter.dto.UserLoginRequest;
 import com.ming.usercenter.dto.UserResponse;
 import com.ming.usercenter.service.UserService;
 import jakarta.validation.Valid;
@@ -65,6 +66,15 @@ public class UserController {
         }
 
         return ApiResponse.success("用户状态修改成功");
+    }
+
+    // （用户登录：接收用户名和密码，交给Service校验）
+    @PostMapping("/login")
+    public ApiResponse<UserResponse> login(
+            @Valid @RequestBody UserLoginRequest request
+    ) {
+        UserResponse response = userService.login(request);
+        return ApiResponse.success(response);
     }
 
     // （新增用户：先自动校验JSON，再交给Service处理）

@@ -1,6 +1,7 @@
 package com.ming.usercenter.service;
 
 import com.ming.usercenter.dto.UserCreateRequest;
+import com.ming.usercenter.dto.UserLoginRequest;
 import com.ming.usercenter.dto.UserResponse;
 import com.ming.usercenter.entity.User;
 import com.ming.usercenter.mapper.UserMapper;
@@ -78,8 +79,51 @@ public class UserService {
         return affectedRows > 0;
     }
 
+    // （用户登录：根据用户名查询，并校验密码）
+    public UserResponse login(UserLoginRequest request) {
+
+        // 根据用户名查询数据库
+        User user =
+                userMapper.findByUsername(request.getUsername());
+
+        // 没有找到用户
+        if (user == null) {
+            throw new IllegalArgumentException("用户名或密码错误");
+        }
+
+        // 账号被禁用
+        if (user.getStatus() == null || user.getStatus() != 1) {
+            throw new IllegalArgumentException("账号已被禁用");
+        }
+
+        // 使用BCrypt校验：明文密码是否与数据库哈希匹配
+        boolean passwordMatches = passwordEncoder.matches(
+                request.getPassword(),
+                user.getPassword()
+        );
+
+        if (!passwordMatches) {
+            throw new IllegalArgumentException("用户名或密码错误");
+        }
+
+        // 登录成功，只返回安全字段
+        return new UserResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getAge()
+        );
+    }
+
     // （新增用户：检查数据、加密密码、写入MySQL）
     public UserResponse createUser(UserCreateRequest request) {
+        // 查询用户名是否已经存在
+        User existingUser =
+                userMapper.findByUsername(request.getUsername());
+
+        if (existingUser != null) {
+            throw new IllegalArgumentException("用户名已经存在");
+        }
+
         // 创建一个与users表对应的User对象
         User user = new User();
 

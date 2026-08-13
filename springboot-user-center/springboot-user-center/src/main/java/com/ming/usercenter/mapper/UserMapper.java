@@ -41,6 +41,14 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(User user);
 
+    // （根据用户名查询用户：用于注册查重和登录）
+    @Select("""
+            SELECT id, username, password, age, status, created_at
+            FROM users
+            WHERE username = #{username}
+            """)
+    User findByUsername(@Param("username") String username);
+
     // （修改用户状态：根据id把status改成0或1）
     @Update("""
             UPDATE users
