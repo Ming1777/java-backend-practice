@@ -1,9 +1,11 @@
 package com.ming.usercenter.service;
 
+import com.ming.usercenter.common.ErrorCode;
 import com.ming.usercenter.dto.UserCreateRequest;
 import com.ming.usercenter.dto.UserLoginRequest;
 import com.ming.usercenter.dto.UserResponse;
 import com.ming.usercenter.entity.User;
+import com.ming.usercenter.exception.BusinessException;
 import com.ming.usercenter.mapper.UserMapper;
 
 import java.util.ArrayList;
@@ -33,9 +35,12 @@ public class UserService {
 
         User user = userMapper.findById(id);
 
-        // 未查询到用户时返回null，由Controller包装成失败响应
+        // 没有查到用户时抛出统一业务异常
         if (user == null) {
-            return null;
+            throw new BusinessException(
+                    ErrorCode.NOT_FOUND,
+                    "用户不存在"
+            );
         }
 
         // （只返回id、用户名和年龄，不把密码返回给前端）
@@ -65,18 +70,25 @@ public class UserService {
     }
 
     // （修改用户状态：先检查status，再交给Mapper修改数据库）
-    public boolean updateUserStatus(Long id, Integer status) {
+    public void updateUserStatus(Long id, Integer status) {
 
         // status只能是0或1
         if (status == null || (status != 0 && status != 1)) {
-            return false;
+            throw new BusinessException(
+                    ErrorCode.BAD_REQUEST,
+                    "状态值只能是0或1"
+            );
         }
 
         // 调用Mapper执行UPDATE语句
         int affectedRows = userMapper.updateStatus(id, status);
 
-        // 修改行数大于0，说明修改成功
-        return affectedRows > 0;
+        if (affectedRows == 0) {
+            throw new BusinessException(
+                    ErrorCode.NOT_FOUND,
+                    "用户不存在"
+            );
+        }
     }
 
     // （用户登录：根据用户名查询，并校验密码）
@@ -88,12 +100,18 @@ public class UserService {
 
         // 没有找到用户
         if (user == null) {
-            throw new IllegalArgumentException("用户名或密码错误");
+            throw new BusinessException(
+                    ErrorCode.BAD_REQUEST,
+                    "用户名或密码错误"
+            );
         }
 
         // 账号被禁用
         if (user.getStatus() == null || user.getStatus() != 1) {
-            throw new IllegalArgumentException("账号已被禁用");
+            throw new BusinessException(
+                    ErrorCode.FORBIDDEN,
+                    "账号已被禁用"
+            );
         }
 
         // 使用BCrypt校验：明文密码是否与数据库哈希匹配
@@ -103,7 +121,10 @@ public class UserService {
         );
 
         if (!passwordMatches) {
-            throw new IllegalArgumentException("用户名或密码错误");
+            throw new BusinessException(
+                    ErrorCode.BAD_REQUEST,
+                    "用户名或密码错误"
+            );
         }
 
         // 登录成功，只返回安全字段
@@ -121,7 +142,10 @@ public class UserService {
                 userMapper.findByUsername(request.getUsername());
 
         if (existingUser != null) {
-            throw new IllegalArgumentException("用户名已经存在");
+            throw new BusinessException(
+                    ErrorCode.BAD_REQUEST,
+                    "用户名已经存在"
+            );
         }
 
         // 创建一个与users表对应的User对象
@@ -141,7 +165,10 @@ public class UserService {
         int affectedRows = userMapper.insert(user);
 
         if (affectedRows == 0) {
-            throw new IllegalStateException("新增用户失败");
+            throw new BusinessException(
+                    ErrorCode.SYSTEM_ERROR,
+                    "新增用户失败"
+            );
         }
 
         // 返回安全数据，不返回密码

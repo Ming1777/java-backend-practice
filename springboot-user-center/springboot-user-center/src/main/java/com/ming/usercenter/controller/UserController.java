@@ -1,10 +1,14 @@
 package com.ming.usercenter.controller;
 
 import com.ming.usercenter.common.ApiResponse;
+import com.ming.usercenter.common.ErrorCode;
+import com.ming.usercenter.common.SessionConstants;
 import com.ming.usercenter.dto.UserCreateRequest;
 import com.ming.usercenter.dto.UserLoginRequest;
 import com.ming.usercenter.dto.UserResponse;
+import com.ming.usercenter.exception.BusinessException;
 import com.ming.usercenter.service.UserService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,11 +46,6 @@ public class UserController {
             @PathVariable("id") Long id
     ) {
         UserResponse user = userService.getUserById(id);
-
-        if (user == null) {
-            return ApiResponse.fail(404, "用户不存在");
-        }
-
         return ApiResponse.success(user);
     }
 
@@ -56,25 +55,48 @@ public class UserController {
             @PathVariable("id") Long id,
             @RequestParam("status") Integer status
     ) {
-        boolean success = userService.updateUserStatus(id, status);
-
-        if (!success) {
-            return ApiResponse.fail(
-                    400,
-                    "状态值不合法或用户不存在"
-            );
-        }
-
+        userService.updateUserStatus(id, status);
         return ApiResponse.success("用户状态修改成功");
     }
 
     // （用户登录：接收用户名和密码，交给Service校验）
     @PostMapping("/login")
     public ApiResponse<UserResponse> login(
-            @Valid @RequestBody UserLoginRequest request
+            @Valid @RequestBody UserLoginRequest request,
+            HttpSession session
     ) {
         UserResponse response = userService.login(request);
+
+        // 登录成功后，把安全的用户信息保存到当前会话
+        session.setAttribute(
+                SessionConstants.LOGIN_USER,
+                response
+        );
+
         return ApiResponse.success(response);
+    }
+
+    // （查询当前登录用户：从Session读取登录状态）
+    @GetMapping("/me")
+    public ApiResponse<UserResponse> getCurrentUser(
+            HttpSession session
+    ) {
+        Object loginUser = session.getAttribute(
+                SessionConstants.LOGIN_USER
+        );
+
+        if (!(loginUser instanceof UserResponse userResponse)) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        return ApiResponse.success(userResponse);
+    }
+
+    // （退出登录：销毁当前Session）
+    @PostMapping("/logout")
+    public ApiResponse<String> logout(HttpSession session) {
+        session.invalidate();
+        return ApiResponse.success("退出登录成功");
     }
 
     // （新增用户：先自动校验JSON，再交给Service处理）

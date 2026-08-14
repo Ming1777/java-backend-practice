@@ -10,6 +10,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // （处理可预料的业务异常）
+    @ExceptionHandler(BusinessException.class)
+    public ApiResponse<Void> handleBusinessException(
+            BusinessException exception
+    ) {
+        return ApiResponse.fail(
+                exception.getCode(),
+                exception.getMessage()
+        );
+    }
+
     // （处理@Valid校验失败：提取第一条校验提示）
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ApiResponse<Void> handleValidationException(
