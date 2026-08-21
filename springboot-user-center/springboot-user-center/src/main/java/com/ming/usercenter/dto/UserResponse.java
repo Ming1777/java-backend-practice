@@ -1,13 +1,14 @@
 package com.ming.usercenter.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class UserResponse implements Serializable {
 
@@ -18,5 +19,4 @@ public class UserResponse implements Serializable {
     private String username;
     private Integer age;
 }
-
 
