@@ -48,8 +48,18 @@ public class UserService {
                         + "，结果 = "
                         + cachedJson
         );
-        // 【手敲】Redis查询到了JSON
+        // Redis查询到了JSON
         if (cachedJson != null) {
+            // Redis保存的是空值标记，说明这个用户之前已经查过，确实不存在
+            if ("NULL".equals(cachedJson)) {
+                System.out.println("2. 命中空值缓存，不再查询MySQL");
+
+                throw new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        "用户不存在"
+                );
+            }
+
             try {
                 // 把JSON字符串还原成UserResponse对象
                 UserResponse cachedUser = objectMapper.readValue(
@@ -72,8 +82,15 @@ public class UserService {
 
         User user = userMapper.findById(id);
 
-        // 没有查到用户时抛出统一业务异常
+        // MySQL没有查到用户
         if (user == null) {
+            // 缓存空值2分钟，防止相同的无效请求不断查询MySQL
+            stringRedisTemplate.opsForValue().set(
+                    cacheKey,
+                    "NULL",
+                    Duration.ofMinutes(2)
+            );
+
             throw new BusinessException(
                     ErrorCode.NOT_FOUND,
                     "用户不存在"
@@ -127,7 +144,7 @@ public class UserService {
         return responses;
     }
 
-    // （修改用户状态：先检查status，再交给Mapper修改数据库）
+    // （修改用户状态：先更新MySQL，成功后删除该用户的Redis缓存）
     public void updateUserStatus(Long id, Integer status) {
 
         // status只能是0或1
@@ -138,17 +155,22 @@ public class UserService {
             );
         }
 
-        // 调用Mapper执行UPDATE语句
+        // 第一步：修改MySQL中的用户状态
         int affectedRows = userMapper.updateStatus(id, status);
 
+        // 修改了0行，说明用户不存在
         if (affectedRows == 0) {
             throw new BusinessException(
                     ErrorCode.NOT_FOUND,
                     "用户不存在"
             );
         }
-    }
 
+        // 【手敲】第二步：MySQL更新成功后，删除该用户的旧缓存
+        String cacheKey = "user:detail:" + id;
+        stringRedisTemplate.delete(cacheKey);
+        System.out.println("MySQL更新成功，已删除缓存：" + cacheKey);
+    }
     // （用户登录：根据用户名查询，并校验密码）
     public UserResponse login(UserLoginRequest request) {
 
