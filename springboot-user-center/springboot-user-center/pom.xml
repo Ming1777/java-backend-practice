@@ -75,8 +75,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- Redisson：提供分布式锁等功能 -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>4.7.0</version>
+        </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
