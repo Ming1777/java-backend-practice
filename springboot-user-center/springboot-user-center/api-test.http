@@ -11,3 +11,16 @@ Content-Type: application/json
 
 ### 禁用2号用户
 PATCH http://localhost:8080/users/2/status?status=0
+### 查询全部用户
+GET http://localhost:8080/users
+### 查询1号用户
+GET http://localhost:8080/users/1
+### 9月3日：新增测试用户
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "username": "study_0903",
+  "password": "Test123456",
+  "age": 20
+}
