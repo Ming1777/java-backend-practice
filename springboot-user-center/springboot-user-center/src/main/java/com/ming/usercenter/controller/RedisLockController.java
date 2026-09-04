@@ -1,5 +1,6 @@
 package com.ming.usercenter.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @RestController
 @RequestMapping("/redis-lock")
 public class RedisLockController {
@@ -35,7 +37,7 @@ public class RedisLockController {
                 return requestId + "：未获得锁，请稍后再试";
             }
 
-            System.out.println(requestId + "：获得锁，开始处理");
+            log.info("获得锁，开始处理，requestId = {}", requestId);
 
             // 模拟处理任务，耗时10秒
             Thread.sleep(10000);
@@ -50,7 +52,7 @@ public class RedisLockController {
             // 只释放自己获得、且仍由当前线程持有的锁
             if (acquired && lock.isHeldByCurrentThread()) {
                 lock.unlock();
-                System.out.println(requestId + "：已释放锁");
+                log.info("已释放锁，requestId = {}", requestId);
             }
         }
     }

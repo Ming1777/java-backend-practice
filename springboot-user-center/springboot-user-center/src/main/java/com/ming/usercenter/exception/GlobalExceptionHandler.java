@@ -5,8 +5,10 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import lombok.extern.slf4j.Slf4j;
 
 // （全局异常处理：统一捕获项目中没有处理的异常）
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -50,7 +52,7 @@ public class GlobalExceptionHandler {
     // （兜底处理：捕获其他未知异常）
     @ExceptionHandler(Exception.class)
     public ApiResponse<Void> handleException(Exception exception) {
-        exception.printStackTrace();
+        log.error("请求处理发生未预期异常", exception);
 
         return ApiResponse.fail(
                 500,

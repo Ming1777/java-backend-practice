@@ -12,13 +12,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 // （用户Service：处理与用户有关的业务）
+@Slf4j
 @Service
+
 public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
@@ -42,17 +45,12 @@ public class UserService {
     public UserResponse getUserById(Long id) {
         String cacheKey = "user:detail:" + id;
         String cachedJson = stringRedisTemplate.opsForValue().get(cacheKey);
-        System.out.println(
-                "1. Service查询Redis，key = "
-                        + cacheKey
-                        + "，结果 = "
-                        + cachedJson
-        );
+        log.info("查询用户缓存，id = {}", id);
         // Redis查询到了JSON
         if (cachedJson != null) {
             // Redis保存的是空值标记，说明这个用户之前已经查过，确实不存在
             if ("NULL".equals(cachedJson)) {
-                System.out.println("2. 命中空值缓存，不再查询MySQL");
+                log.info("命中空值缓存，不再查询MySQL，id = {}", id);
 
                 throw new BusinessException(
                         ErrorCode.NOT_FOUND,
@@ -67,7 +65,7 @@ public class UserService {
                         UserResponse.class
                 );
 
-                System.out.println("2. Redis缓存命中，直接返回");
+                log.info("Redis缓存命中，直接返回，id = {}", id);
 
                 // return执行后，方法立即结束，不再查询MySQL
                 return cachedUser;
@@ -75,10 +73,10 @@ public class UserService {
                 // 如果缓存里的JSON损坏，就删除错误缓存
                 stringRedisTemplate.delete(cacheKey);
 
-                System.out.println("Redis缓存格式错误，已删除");
+                log.warn("Redis缓存JSON格式错误，已删除缓存，准备查询MySQL，id = {}", id, e);
             }
         }
-        System.out.println("2. Redis未命中，开始查询MySQL，id = " + id);
+        log.info("Redis无可用缓存，开始查询MySQL，id = {}", id);
 
         User user = userMapper.findById(id);
 
@@ -115,10 +113,10 @@ public class UserService {
                     Duration.ofMinutes(10)
             );
 
-            System.out.println("3. MySQL结果已经写入Redis");
+            log.info("MySQL查询结果已写入Redis，id = {}", id);
         } catch (JacksonException e) {
-            // Redis缓存失败不能影响正常查询
-            System.out.println("写入Redis失败，本次仍然返回MySQL结果");
+            // 转换缓存JSON失败时仍返回查询结果；这里不捕获Redis连接异常
+            log.warn("用户数据转换为缓存JSON失败，本次仍然返回MySQL结果，id = {}", id, e);
         }
 
         // 最终把安全的用户数据返回给Controller
@@ -169,7 +167,7 @@ public class UserService {
         // 【手敲】第二步：MySQL更新成功后，删除该用户的旧缓存
         String cacheKey = "user:detail:" + id;
         stringRedisTemplate.delete(cacheKey);
-        System.out.println("MySQL更新成功，已删除缓存：" + cacheKey);
+        log.info("用户状态更新成功，已删除缓存，id = {}, status = {}", id, status);
     }
     // （用户登录：根据用户名查询，并校验密码）
     public UserResponse login(UserLoginRequest request) {
