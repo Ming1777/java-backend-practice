@@ -1,0 +1,5 @@
+**
+!Dockerfile
+!.dockerignore
+!target/
+!target/springboot-user-center-0.0.1-SNAPSHOT.jar

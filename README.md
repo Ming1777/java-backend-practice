@@ -205,6 +205,8 @@ $env:DB_PASSWORD = [System.Net.NetworkCredential]::new('', $dbPassword).Password
 
 ## 核心接口
 
+本地Docker运行用户中心的步骤和端口、环境变量说明见 [9月7日Docker学习笔记](docs/study-notes-2026-09-07.md)。这是单个应用容器连接现有MySQL/Redis的学习方式，并非完整Compose部署或生产配置。
+
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | GET | `/users` | 查询启用状态的用户列表 |
