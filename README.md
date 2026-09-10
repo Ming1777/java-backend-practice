@@ -1,5 +1,7 @@
 # Java Backend Practice
 
+学习衔接见 [学习进度](docs/学习进度.md)；最新记录见 [2026-09-09 学习笔记](docs/study-notes-2026-09-09.md)。
+
 面向 Java 后端实习与校招的个人学习仓库，包含 Java 基础、数据结构与算法练习，以及一个基于 Spring Boot、MyBatis、MySQL 和 Redis 的用户中心学习项目。
 
 ## 项目介绍
